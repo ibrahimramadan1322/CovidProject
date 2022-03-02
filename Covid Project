@@ -1,0 +1,99 @@
+-- Selecting data that I'll be using
+
+SELECT  Location, Continent , date, total_cases, new_cases, total_deaths, population
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Continent is not NULL
+Order by 1,2
+
+
+-- Looking at the Total cases vs Total Deaths in the United Kingdom
+
+SELECT  Location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 AS Deaths_Percentage
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Location Like 'United Kingdom' AND Continent Is not NULL
+Order by 1,2
+
+
+-- Looking at the total cases vs the population (the infection percentage) In the UK
+
+SELECT  Location, date, total_cases, population, (total_cases/population)*100 AS Infection_Percentage
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Location Like 'United Kingdom' AND Continent Is not NULL
+Order by 1,2
+
+-- Calculating Cases increase per day in the UK
+
+SELECT date, SUM(new_cases)
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Location Like 'United Kingdom'
+Group by date
+Order by 1,2
+
+
+-- Looking at countries with the highest infection rate compared to the population
+
+SELECT  Location , Population, MAX(total_cases) AS Highest_Infection , MAX((total_cases/population))*100 AS Infection_Percentage
+FROM `covid-project-342901.Covid.coviddeaths`
+-- Where Location Like 'United Kingdom'
+Group by Population, Location
+Order by Infection_Percentage DESC
+
+
+-- Showing countries with the highest deaths
+SELECT  Location , Population, MAX(total_deaths) AS Highest_deaths
+FROM `covid-project-342901.Covid.coviddeaths`
+-- Where Location Like 'United Kingdom'
+Where Continent is not NULL
+Group by Population, Location
+Order by Highest_deaths DESC
+
+
+-- Showing countries with the highest death rate
+SELECT  Location , Population, MAX(total_deaths) AS Highest_deaths , MAX((total_deaths/population))*100 AS Deaths_Percentage
+FROM `covid-project-342901.Covid.coviddeaths`
+-- Where Location Like 'United Kingdom'
+Where Continent is not NULL
+Group by Population, Location
+Order by Deaths_Percentage DESC
+
+
+-- Calculating the highest deaths per continent
+
+SELECT Location , MAX(cast(total_deaths as bigint ))  AS Highest_deaths
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Continent is NULL
+Group by Location
+Order by Highest_deaths DESC
+
+
+-- Calculating Cases/deaths increase per day
+
+SELECT date, SUM(new_cases) AS NewCases, SUM(new_deaths) AS NewDeaths
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Continent is not NULL
+Group by date
+Order by 1,2
+
+
+-- Calculating Death percentage per day
+
+SELECT date, SUM(new_cases) AS NewCases, SUM(new_deaths) AS NewDeaths, SUM(new_cases)/SUM(new_deaths)*100 AS Deathpercentage
+FROM `covid-project-342901.Covid.coviddeaths`
+Where Continent is not NULL
+Group by date
+Order by 1,2
+
+
+---- VACCINATION ----
+
+-- Rolling new vaccination worldwide
+
+SELECT  dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations, SUM (CAST (vac.new_vaccinations AS bigint )) OVER (Partition by dea.Location Order by dea.location, dea.date ) AS RollingPeopleVaccinated
+FROM `covid-project-342901.Covid.covidvaccination` vac
+Join  `covid-project-342901.Covid.coviddeaths`dea
+ON ( dea.Location = vac.Location
+AND
+dea.date = vac.date )
+
+Where dea.continent is not NULL
+order by 2,3
